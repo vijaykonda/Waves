@@ -22,7 +22,6 @@ class PeerManager(
     networkController: ActorRef,
     applicationName: String) extends Actor with ScorexLogging {
 
-  import PeerConnectionHandler._
   import PeerManager._
 
   val blacklistResendInterval = settings.blackListResidenceTime / 10
@@ -74,12 +73,8 @@ class PeerManager(
         sender() ! CloseAllConnectionsComplete
       } else {
         maybeShutdownRequester = Some(sender())
-        connectedPeers.foreach(_._2.handlerRef ! CloseConnection)
       }
 
-    case CloseConnectionCompleted(remote) =>
-      disconnect(remote)
-      if (connectedPeers.isEmpty) maybeShutdownRequester.foreach(_ ! CloseAllConnectionsComplete)
 
   }: Receive) orElse blacklistOperations orElse peerListOperations orElse peerCycle)
 
@@ -91,10 +86,10 @@ class PeerManager(
 
       if (isBlacklisted(remote)) {
         log.warn(s"Got incoming connection from blacklisted $remote")
-        handlerRef ! CloseConnection
+//        handlerRef ! CloseConnection
       } else if (connectionsCount >= settings.maxConnections && connectingPeer != Option(remote)) {
         log.info(s"Number of connections exceeded ${settings.maxConnections}, disconnect $remote")
-        handlerRef ! CloseConnection
+//        handlerRef ! CloseConnection
       } else {
         handleNewConnection(remote, handlerRef, ownSocketAddress, inbound)
       }
@@ -102,7 +97,7 @@ class PeerManager(
     case Handshaked(address, handshake) =>
       if (isBlacklisted(address)) {
         log.warn(s"Got handshake from blacklisted $address")
-        connectedPeers.get(address).foreach(_.handlerRef ! CloseConnection)
+//        connectedPeers.get(address).foreach(_.handlerRef ! CloseConnection)
       } else {
         handleHandshake(address, handshake)
       }
@@ -156,7 +151,7 @@ class PeerManager(
 
     if (connectedPeers.contains(remote)) {
       log.debug(s"Second connection from the same InetAddress $remote is not allowed")
-      handlerRef ! CloseConnection
+//      handlerRef ! CloseConnection
     } else {
       val connectionFromHostCount = connectedPeers.keys.count(_.getHostName == remote.getHostName)
       if (AllowedConnectionsFromOneHost > connectionFromHostCount) {
@@ -174,7 +169,7 @@ class PeerManager(
         }
       } else {
         log.debug(s"Max connection from one IP exceeded $remote")
-        handlerRef ! CloseConnection
+//        handlerRef ! CloseConnection
       }
     }
   }
@@ -194,11 +189,11 @@ class PeerManager(
     connectedPeers.get(remote) match {
       case None =>
         log.error(s"New message from unknown $remote")
-        sender() ! CloseConnection
+//        sender() ! CloseConnection
 
       case Some(PeerConnection(_, None, _)) =>
         log.error(s"No connected peer matches $remote")
-        sender() ! CloseConnection
+//        sender() ! CloseConnection
 
       case Some(PeerConnection(_, Some(handshakeData), _)) =>
         val peer = new InetAddressPeer(handshakeData.nodeNonce, remote, self)
@@ -226,12 +221,12 @@ class PeerManager(
     connectedPeers.get(address) match {
       case None =>
         log.error("No peer matching handshake")
-        sender() ! CloseConnection
+//        sender() ! CloseConnection
 
       case Some(PeerConnection(_, Some(_), _)) =>
         log.info(s"Double handshake from $address")
         connectedPeers.remove(address)
-        sender() ! CloseConnection
+//        sender() ! CloseConnection
 
       case Some(connection@PeerConnection(_, None, inbound)) =>
         log.debug(s"Comparing remote application name '${handshake.applicationName}' to local '$applicationName'")
@@ -242,11 +237,11 @@ class PeerManager(
           log.info("Drop connection to self")
           connectedPeers.remove(address)
           peerDatabase.removePeer(address)
-          connection.handlerRef ! CloseConnection
+//          connection.handlerRef ! CloseConnection
         } else if (peerNonces().contains((address.getAddress, handshake.nodeNonce))) {
           log.info("Drop connection to already connected peer with the same ip and nonce")
           connectedPeers.remove(address)
-          connection.handlerRef ! CloseConnection
+//          connection.handlerRef ! CloseConnection
         } else {
           val declaredAddressOption = handshake.declaredAddress
           if (!inbound) {
@@ -290,7 +285,7 @@ class PeerManager(
   private def addPeerToBlacklist(address: InetSocketAddress): Unit = {
     log.info(s"Blacklist peer $address")
     peerDatabase.blacklistHost(address.getHostName)
-    connectedPeers.remove(address).foreach(_.handlerRef ! CloseConnection)
+//    connectedPeers.remove(address).foreach(_.handlerRef ! CloseConnection)
 
     blacklistListeners.foreach { listener =>
       listener ! BlackListUpdated(address.getHostName)
