@@ -1,8 +1,9 @@
 package scorex.network
 
 import akka.actor.Actor.Receive
-import akka.actor.{ActorRef, Cancellable}
+import akka.actor.{Actor, ActorRef, Cancellable}
 import akka.event.LoggingReceive
+import com.wavesplatform.network.GetSignatures
 import com.wavesplatform.settings.SynchronizationSettings
 import scorex.block.Block
 import scorex.block.Block._
@@ -17,12 +18,11 @@ import shapeless.syntax.typeable._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class BlockchainSynchronizer(protected val networkControllerRef: ActorRef, coordinator: ActorRef, history: History, synchronizationSettings: SynchronizationSettings) extends ViewSynchronizer with ScorexLogging {
+class BlockchainSynchronizer(coordinator: ActorRef, history: History, synchronizationSettings: SynchronizationSettings)
+  extends Actor with ScorexLogging {
 
   import BlockchainSynchronizer._
   import Coordinator.SyncFinished._
-
-  override val messageSpecs = Seq(SignaturesSpec, BlockMessageSpec)
 
   private lazy val timeout = synchronizationSettings.synchronizationTimeout
   private lazy val maxChainLength = synchronizationSettings.maxChainLength
@@ -102,7 +102,8 @@ class BlockchainSynchronizer(protected val networkControllerRef: ActorRef, coord
       val overlap = withTail.lastTwoBlockIds
 
       run(initial, GettingExtensionTail) { updatedPeersData =>
-//        val msg = Message(GetSignaturesSpec, Right(overlap.reverse.map(_.blockId)), None)
+        updatedPeersData.active
+        GetSignatures(overlap.reverse.map(_.blockId))
 //        networkControllerRef ! NetworkController.SendToNetwork(msg, SendToChosen(updatedPeersData.active))
 
         gettingExtensionTail(withTail, overlap, updatedPeersData)
