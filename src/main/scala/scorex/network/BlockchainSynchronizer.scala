@@ -40,8 +40,8 @@ class BlockchainSynchronizer(protected val networkControllerRef: ActorRef, coord
 
         val lastIds = history.lastBlockIds(synchronizationSettings.maxRollback)
 
-        val msg = Message(GetSignaturesSpec, Right(lastIds), None)
-        networkControllerRef ! NetworkController.SendToNetwork(msg, SendToChosen(peerScores.keys.toSeq))
+//        val msg = Message(GetSignaturesSpec, Right(lastIds), None)
+//        networkControllerRef ! NetworkController.SendToNetwork(msg, SendToChosen(peerScores.keys.toSeq))
 
         gettingExtension(lastIds.map(InnerId), peerScores.map(peer => peer._1 -> Peer(peer._2)))
       }
@@ -102,8 +102,8 @@ class BlockchainSynchronizer(protected val networkControllerRef: ActorRef, coord
       val overlap = withTail.lastTwoBlockIds
 
       run(initial, GettingExtensionTail) { updatedPeersData =>
-        val msg = Message(GetSignaturesSpec, Right(overlap.reverse.map(_.blockId)), None)
-        networkControllerRef ! NetworkController.SendToNetwork(msg, SendToChosen(updatedPeersData.active))
+//        val msg = Message(GetSignaturesSpec, Right(overlap.reverse.map(_.blockId)), None)
+//        networkControllerRef ! NetworkController.SendToNetwork(msg, SendToChosen(updatedPeersData.active))
 
         gettingExtensionTail(withTail, overlap, updatedPeersData)
       }
@@ -137,8 +137,8 @@ class BlockchainSynchronizer(protected val networkControllerRef: ActorRef, coord
     log.debug(s"Going to request blocks amt=${blockIds.size}: ${blockIds.take(2)}, ...}, peer: ${peers.active}")
 
     blockIds.foreach { blockId =>
-      val msg = Message(GetBlockSpec, Right(blockId.blockId), None)
-      networkControllerRef ! NetworkController.SendToNetwork(msg, SendToChosen(peers.active))
+//      val msg = Message(GetBlockSpec, Right(blockId.blockId), None)
+//      networkControllerRef ! NetworkController.SendToNetwork(msg, SendToChosen(peers.active))
     }
     val initialScore = history.scoreOf(lastCommonBlockId)
     val forkStorage = new InMemoryBlockSeq(blockIds)
