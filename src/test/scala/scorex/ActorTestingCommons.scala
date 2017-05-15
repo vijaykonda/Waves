@@ -106,7 +106,7 @@ abstract class ActorTestingCommons extends TestKitBase
 
   protected val actorRef: ActorRef
 
-  protected def dataFromNetwork[C](spec: MessageSpec[C], data: C, fromPeer: ConnectedPeer = peer): Unit =
+  protected def dataFromNetwork[C <: AnyRef](spec: MessageSpec[C], data: C, fromPeer: ConnectedPeer = peer): Unit =
     actorRef ! DataFromPeer(spec.messageCode, data, fromPeer)
 
   protected def blockIds(ids: Int*): BlockIds = ids.map(toBlockId)
@@ -135,12 +135,12 @@ abstract class ActorTestingCommons extends TestKitBase
     override def extract(blockId: BlockId): Int = blockId(0)
   }
 
-  protected def expectNetworkMessage[Content: TestDataExtraction](expectedSpec: MessageSpec[Content], expectedData: Any): Unit =
+  protected def expectNetworkMessage[Content <: AnyRef : TestDataExtraction](expectedSpec: MessageSpec[Content], expectedData: Any): Unit =
     expectNetworkMessage(expectedSpec, expectedData, {
       _.asInstanceOf[SendToChosen].chosenPeers.contains(peer)
     })
 
-  protected def expectNetworkMessage[Content: TestDataExtraction](expectedSpec: MessageSpec[Content],
+  protected def expectNetworkMessage[Content <: AnyRef : TestDataExtraction](expectedSpec: MessageSpec[Content],
                                                                   expectedData: Any,
                                                                   strategyAssertion: SendingStrategy => Boolean): Unit =
     networkController.expectMsgPF(hint = expectedData.toString) {
