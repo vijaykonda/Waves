@@ -338,9 +338,9 @@ object BlockchainSynchronizer {
   case class GetExtension(peerScores: Map[ConnectedPeer, BlockchainScore])
 
   case class InnerId(blockId: BlockId) {
-    override def equals(obj: Any): Boolean = {
-      import shapeless.syntax.typeable._
-      obj.cast[InnerId].exists(_.blockId.sameElements(this.blockId))
+    override def equals(obj: Any): Boolean = obj match {
+      case InnerId(that) => blockId.sameElements(that)
+      case _ => false
     }
 
     override def hashCode(): Int = scala.util.hashing.MurmurHash3.seqHash(blockId)
